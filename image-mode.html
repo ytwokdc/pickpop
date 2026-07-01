@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>สุ่มจากรูปภาพ - PickPop</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&family=Anuphan:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/common.css">
+    <link rel="stylesheet" href="css/image-mode.css">
+</head>
+<body>
+    <div class="image-mode-page">
+        <!-- Top Bar -->
+        <div class="top-bar">
+            <div class="top-bar-left">
+                <a href="index.html" class="back-btn">
+                    <span>←</span>
+                    <span>หน้าแรก</span>
+                </a>
+                <div class="counter-display" id="counterDisplay">0/0</div>
+                
+                <label for="fileInput" class="file-input-label">
+                    📁 เลือกรูปภาพ
+                </label>
+                <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp" multiple>
+                
+                <label for="addMoreInput" class="file-input-label add-more-label">
+                    + เพิ่มรูป
+                </label>
+                <input type="file" id="addMoreInput" accept="image/jpeg,image/png,image/webp" multiple>
+            </div>
+
+            <div class="top-bar-right">
+                <div class="control-group">
+                    <label>จำนวนรางวัล:</label>
+                    <input type="number" id="prizesInput" class="control-input" value="1" min="1" max="20">
+                    <button class="control-btn" id="prizesBtn">OK</button>
+                </div>
+                
+                <div class="control-group">
+                    <label>เวลา:</label>
+                    <input type="number" id="durationInput" class="control-input" value="3" min="1" max="10" step="0.5">
+                    <button class="control-btn" id="durationBtn">OK</button>
+                    <span style="font-size: 0.85em;">วินาที</span>
+                </div>
+
+                <button class="state-btn" id="exportBtn">💾 Export</button>
+                <label for="importInput" class="state-btn import-btn">
+                    📂 Import
+                </label>
+                <input type="file" id="importInput" accept=".json">
+            </div>
+        </div>
+
+        <!-- Grid Container -->
+        <div class="grid-container" id="gridContainer">
+            <div class="empty-state" id="emptyState">
+                <div class="empty-state-icon">📸</div>
+                <h2 class="empty-state-title">ยังไม่มีรูปภาพ</h2>
+                <p class="empty-state-text">
+                    เริ่มต้นด้วยการคลิกปุ่ม "เลือกรูปภาพ" ด้านบน<br>
+                    รองรับไฟล์ JPG, PNG, WebP
+                </p>
+            </div>
+            <div class="highlight-box" id="highlightBox"></div>
+        </div>
+
+        <!-- Winner Gallery -->
+        <div class="winner-gallery" id="winnerGallery"></div>
+
+        <!-- Controls -->
+        <div class="controls">
+            <button class="btn-control btn-reset" id="resetBtn" disabled>
+                🔄 Reset
+            </button>
+            <button class="btn-control btn-shuffle" id="shuffleBtn" disabled>
+                🔀 Shuffle
+            </button>
+            <button class="btn-control btn-draw" id="drawBtn" disabled>
+                🎲 Random
+            </button>
+        </div>
+
+        <!-- Free Tier Warning -->
+        <div class="free-tier-warning" id="freeTierWarning">
+            <div class="free-tier-warning-icon">⚠️</div>
+            <div class="free-tier-warning-text">
+                <strong>เกินขีดจำกัดฟรี!</strong><br>
+                รุ่นฟรีสุ่มได้สูงสุด 30 คน — <a href="index.html" style="color: white; text-decoration: underline;">อัปเกรดที่นี่</a>
+            </div>
+        </div>
+
+        <!-- Winner Modal -->
+        <div class="modal-overlay" id="winnerModal">
+            <div class="modal-content">
+                <button class="close-modal" id="closeModal">✕</button>
+                <h1 class="modal-title">
+                    <span class="modal-title-emoji">🎉</span>
+                    ผู้โชคดี!
+                </h1>
+                <div class="winner-images-grid" id="winnerContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/common.js"></script>
+    <script src="js/image-mode.js"></script>
+</body>
+</html>
