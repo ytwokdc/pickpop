@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PickPop - โปรแกรมสุ่มผู้โชคดี</title>
+    <meta name="description" content="โปรแกรมสุ่มผู้โชคดีสำหรับงานอีเวนต์ สุ่มได้ทั้งรูปภาพและรายชื่อ ใช้งานง่าย ฟรี!">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&family=Anuphan:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/common.css">
+    <link rel="stylesheet" href="css/landing.css">
+</head>
+<body>
+    <div class="landing-page">
+        <!-- Animated Background Shapes -->
+        <div class="bg-shapes">
+            <div class="bg-shape bg-shape-1"></div>
+            <div class="bg-shape bg-shape-2"></div>
+            <div class="bg-shape bg-shape-3"></div>
+        </div>
+
+        <!-- Header -->
+        <header class="landing-header">
+            <div class="brand-logo">
+                <span class="emoji">🎉</span>
+                <span class="pick">Pick</span><span class="pop">Pop</span>
+            </div>
+            <p class="tagline">โปรแกรมสุ่มผู้โชคดี สำหรับทุกงานอีเวนต์</p>
+        </header>
+
+        <!-- Main Content -->
+        <main class="landing-main">
+            <div class="mode-selection">
+                <h1 class="selection-title">เลือกรูปแบบการสุ่ม</h1>
+                <p class="selection-subtitle">คุณต้องการสุ่มแบบไหน?</p>
+
+                <div class="mode-cards">
+                    <!-- Image Mode Card -->
+                    <a href="image-mode.html" class="mode-card">
+                        <div class="free-badge">ฟรี 30 คน</div>
+                        <div class="mode-icon">📸</div>
+                        <h2 class="mode-title">สุ่มจากรูปภาพ</h2>
+                        <p class="mode-description">
+                            อัปโหลดรูปผู้เข้าร่วมและสุ่มแบบมองเห็นภาพ<br>
+                            เหมาะกับงานที่มีรูปพนักงาน/ลูกค้า
+                        </p>
+                        <ul class="mode-features">
+                            <li>รองรับรูป JPG, PNG, WebP</li>
+                            <li>สุ่มพร้อมกันหลายรางวัล</li>
+                            <li>ปรับแต่งฟอนต์และสี</li>
+                            <li>Import/Export ข้อมูล</li>
+                        </ul>
+                        <span class="mode-cta">เริ่มสุ่มด้วยรูป →</span>
+                    </a>
+
+                    <!-- Text Mode Card -->
+                    <a href="text-mode.html" class="mode-card">
+                        <div class="free-badge">ฟรี 30 คน</div>
+                        <div class="mode-icon">📝</div>
+                        <h2 class="mode-title">สุ่มจากรายชื่อ</h2>
+                        <p class="mode-description">
+                            วางรายชื่อและสุ่มแบบข้อความ<br>
+                            เหมาะกับงานที่มีแค่รายชื่อผู้เข้าร่วม
+                        </p>
+                        <ul class="mode-features">
+                            <li>วางรายชื่อได้ทันที</li>
+                            <li>ตรวจสอบชื่อซ้ำอัตโนมัติ</li>
+                            <li>ปรับแต่งฟอนต์ สี พื้นหลัง</li>
+                            <li>Import/Export ข้อมูล</li>
+                        </ul>
+                        <span class="mode-cta">เริ่มสุ่มด้วยชื่อ →</span>
+                    </a>
+                </div>
+            </div>
+        </main>
+
+        <!-- Info Section -->
+        <section class="landing-info">
+            <p>🎁 <strong>ทดลองใช้ฟรี</strong> — สุ่มได้สูงสุด 30 คนต่อครั้ง โดยไม่ต้องสมัครสมาชิก</p>
+            <p>💡 ต้องการสุ่มมากกว่านั้น? อัปเกรดเป็นแพ็กเกจได้ในราคาเริ่มต้น 99 บาท</p>
+        </section>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <p>
+                <a href="privacy.html">นโยบายความเป็นส่วนตัว</a> ·
+                <a href="terms.html">ข้อกำหนดการใช้งาน</a> ·
+                <a href="#" onclick="alert('เร็วๆ นี้'); return false;">ติดต่อเรา</a>
+            </p>
+            <p style="margin-top: 10px;">© 2025 PickPop. Made with ❤️ in Thailand</p>
+        </footer>
+    </div>
+
+    <script src="js/common.js"></script>
+    <script>
+        // Track mode selection (for future analytics)
+        document.querySelectorAll('.mode-card').forEach(card => {
+            card.addEventListener('click', (e) => {
+                const mode = card.href.includes('image') ? 'image' : 'text';
+                console.log(`Mode selected: ${mode}`);
+            });
+        });
+    </script>
+</body>
+</html>
