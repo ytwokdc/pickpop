@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>สุ่มจากรายชื่อ - PickPop</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&family=Anuphan:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/common.css">
+    <link rel="stylesheet" href="css/settings.css">
+    <link rel="stylesheet" href="css/text-mode.css">
+</head>
+<body>
+    <div class="text-mode-page">
+        <!-- Top Bar -->
+        <div class="top-bar">
+            <div class="top-bar-left">
+                <a href="index.html" class="back-btn">
+                    <span>←</span>
+                    <span>หน้าแรก</span>
+                </a>
+                <div class="counter-display" id="counterDisplay">0/0</div>
+            </div>
+
+            <div class="top-bar-right">
+                <!-- Settings button will be inserted by settings.js -->
+            </div>
+        </div>
+
+        <!-- Draw Area -->
+        <div class="draw-area" id="drawArea">
+            <div class="empty-state" id="emptyState">
+                <div class="empty-state-icon">📝</div>
+                <h2 class="empty-state-title">ยังไม่มีรายชื่อ</h2>
+                <p class="empty-state-text">
+                    เริ่มต้นด้วยการเปิด <strong>ตั้งค่า ⚙️</strong> ที่มุมขวาบน<br>
+                    แล้ววางรายชื่อผู้เข้าร่วม (บรรทัดละ 1 ชื่อ)
+                </p>
+                <button class="setting-btn setting-btn-accent" id="openSettingsFromEmpty" style="max-width: 200px; margin-top: 10px;">
+                    ⚙️ เปิดตั้งค่า
+                </button>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls">
+            <button class="btn-control btn-reset" id="resetBtn" disabled>
+                🔄 Reset
+            </button>
+            <button class="btn-control btn-draw" id="drawBtn" disabled>
+                🎲 สุ่ม
+            </button>
+        </div>
+
+        <!-- Free Tier Warning -->
+        <div class="free-tier-warning" id="freeTierWarning">
+            <div class="free-tier-warning-icon">⚠️</div>
+            <div class="free-tier-warning-text">
+                <strong>เกินขีดจำกัดฟรี!</strong><br>
+                รุ่นฟรีสุ่มได้สูงสุด 30 คน — <a href="index.html" style="color: white; text-decoration: underline;">อัปเกรดที่นี่</a>
+            </div>
+        </div>
+
+        <!-- Winners Modal -->
+        <div class="modal-overlay" id="winnerModal">
+            <div class="modal-content">
+                <button class="close-modal" id="closeModal">✕</button>
+                <h1 class="modal-title">
+                    <span class="modal-title-emoji">🎉</span>
+                    ผู้โชคดี!
+                </h1>
+                <div class="winner-names-list" id="winnerContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/common.js"></script>
+    <script src="js/settings.js"></script>
+    <script src="js/text-mode.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const openBtn = document.getElementById('openSettingsFromEmpty');
+            if (openBtn) {
+                openBtn.addEventListener('click', () => {
+                    if (window.settingsPanel) window.settingsPanel.openPanel();
+                });
+            }
+        });
+    </script>
+</body>
+</html>
