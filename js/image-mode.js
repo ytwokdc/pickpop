@@ -73,9 +73,32 @@ class ImageDrawApp {
     // FILE HANDLING
     // ============================================
 
-    handleFileSelect(event) {
-        const files = Array.from(event.target.files);
+    async handleFileSelect(event) {
+        let files = Array.from(event.target.files);
         if (files.length === 0) return;
+
+        // Hard limit check (technical ceiling, separate from free tier)
+        if (files.length > PickPop.IMAGE_HARD_LIMIT) {
+            const proceed = await PickPop.showConfirm(
+                `คุณเลือกรูปภาพ ${PickPop.formatNumber(files.length)} รูป\n\n` +
+                `โหมดรูปภาพรองรับสูงสุด ${PickPop.formatNumber(PickPop.IMAGE_HARD_LIMIT)} รูป เพื่อการทำงานที่ลื่นไหลในทุกอุปกรณ์\n\n` +
+                `ระบบจะใช้แค่ ${PickPop.formatNumber(PickPop.IMAGE_HARD_LIMIT)} รูปแรกเท่านั้น\n\n` +
+                `💡 หากมีผู้เข้าร่วมมากกว่านี้ แนะนำให้ใช้ "โหมดสุ่มจากรายชื่อ" แทน ซึ่งไม่มีข้อจำกัดด้านจำนวน\n\n` +
+                `ต้องการดำเนินการต่อหรือไม่?`,
+                '⚠️ เกินขีดจำกัดทางเทคนิค'
+            );
+            if (!proceed) {
+                event.target.value = '';
+                return;
+            }
+            files = files.slice(0, PickPop.IMAGE_HARD_LIMIT);
+        } else if (files.length > PickPop.IMAGE_SOFT_WARNING_LIMIT) {
+            PickPop.showToast(
+                `รูปภาพจำนวนมาก (${PickPop.formatNumber(files.length)} รูป) อาจทำให้บางอุปกรณ์ทำงานช้าลง`,
+                'warning',
+                4000
+            );
+        }
 
         if (PickPop.isOverFreeLimit(files.length)) {
             PickPop.showToast(
@@ -87,50 +110,106 @@ class ImageDrawApp {
         }
 
         this.images = [];
+        this.completenessConfirmed = false;
         this.gridContainer.innerHTML = '';
         this.gridContainer.appendChild(this.highlightBox);
         this.winnerGallery.innerHTML = '';
         this.hideEmptyState();
 
-        files.forEach((file, index) => {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const fileName = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
-                this.addImage(e.target.result, index, fileName);
-                if (this.images.length === files.length) {
-                    this.createImageElements();
-                    this.updateGrid();
-                    this.drawBtn.disabled = false;
-                    this.resetBtn.disabled = false;
-                    this.shuffleBtn.disabled = false;
-                    this.updateCounter();
+        if (files.length > 50) {
+            PickPop.showToast(`กำลังประมวลผลรูปภาพ ${files.length} รูป...`, 'info', 3000);
+        }
 
-                    // Close settings panel if open
-                    if (window.settingsPanel) window.settingsPanel.closePanel();
-                }
-            };
-            reader.readAsDataURL(file);
-        });
+        // Compress all images (resize + re-encode) before storing
+        const results = await Promise.all(files.map(async (file, index) => {
+            try {
+                const compressedSrc = await PickPop.compressImage(file);
+                const fileName = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
+                return { src: compressedSrc, id: index, fileName };
+            } catch (err) {
+                console.error('Compress failed, falling back to original:', err);
+                const fallbackSrc = await new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => resolve(e.target.result);
+                    reader.readAsDataURL(file);
+                });
+                const fileName = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
+                return { src: fallbackSrc, id: index, fileName };
+            }
+        }));
+
+        results.forEach(r => this.addImage(r.src, r.id, r.fileName));
+
+        this.createImageElements();
+        this.updateGrid();
+        this.drawBtn.disabled = false;
+        this.resetBtn.disabled = false;
+        this.shuffleBtn.disabled = false;
+        this.updateCounter();
+
+        if (window.settingsPanel) window.settingsPanel.closePanel();
 
         event.target.value = '';
     }
 
-    handleAddMoreFiles(event) {
-        const files = Array.from(event.target.files);
+    async handleAddMoreFiles(event) {
+        let files = Array.from(event.target.files);
         if (files.length === 0) return;
+
+        const prospectiveTotal = this.images.length + files.length;
+
+        if (prospectiveTotal > PickPop.IMAGE_HARD_LIMIT) {
+            const allowedToAdd = Math.max(0, PickPop.IMAGE_HARD_LIMIT - this.images.length);
+            if (allowedToAdd === 0) {
+                await PickPop.showConfirm(
+                    `คุณมีรูปภาพครบ ${PickPop.formatNumber(PickPop.IMAGE_HARD_LIMIT)} รูปแล้ว (ขีดจำกัดสูงสุด)\n\n` +
+                    `หากมีผู้เข้าร่วมมากกว่านี้ แนะนำให้ใช้ "โหมดสุ่มจากรายชื่อ" แทน`,
+                    'ถึงขีดจำกัดสูงสุดแล้ว'
+                );
+                event.target.value = '';
+                return;
+            }
+            const proceed = await PickPop.showConfirm(
+                `การเพิ่มรูปนี้จะทำให้เกินขีดจำกัด ${PickPop.formatNumber(PickPop.IMAGE_HARD_LIMIT)} รูป\n\n` +
+                `ระบบจะเพิ่มได้อีกแค่ ${PickPop.formatNumber(allowedToAdd)} รูปเท่านั้น\n\n` +
+                `หากมีผู้เข้าร่วมมากกว่านี้ แนะนำให้ใช้ "โหมดสุ่มจากรายชื่อ" แทน\n\nต้องการดำเนินการต่อหรือไม่?`,
+                'เกินขีดจำกัดทางเทคนิค'
+            );
+            if (!proceed) {
+                event.target.value = '';
+                return;
+            }
+            files = files.slice(0, allowedToAdd);
+        } else if (prospectiveTotal > PickPop.IMAGE_SOFT_WARNING_LIMIT) {
+            PickPop.showToast(
+                `รูปภาพจำนวนมาก (รวม ${PickPop.formatNumber(prospectiveTotal)} รูป) อาจทำให้บางอุปกรณ์ทำงานช้าลง`,
+                'warning',
+                4000
+            );
+        }
 
         const filesToAdd = [];
         const duplicates = [];
 
-        const readAllFiles = files.map(file => {
-            return new Promise((resolve) => {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const fileName = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
-                    resolve({ src: e.target.result, fileName });
-                };
-                reader.readAsDataURL(file);
-            });
+        if (files.length > 50) {
+            PickPop.showToast(`กำลังประมวลผลรูปภาพ ${files.length} รูป...`, 'info', 3000);
+        }
+
+        const readAllFiles = files.map(async (file) => {
+            try {
+                const compressedSrc = await PickPop.compressImage(file);
+                const fileName = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
+                return { src: compressedSrc, fileName };
+            } catch (err) {
+                console.error('Compress failed, falling back to original:', err);
+                const fallbackSrc = await new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => resolve(e.target.result);
+                    reader.readAsDataURL(file);
+                });
+                const fileName = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
+                return { src: fallbackSrc, fileName };
+            }
         });
 
         Promise.all(readAllFiles).then(async (results) => {
@@ -185,6 +264,7 @@ class ImageDrawApp {
             });
 
             if (filesToAdd.length > 0) {
+                this.completenessConfirmed = false;
                 this.updateGrid();
                 this.drawBtn.disabled = false;
                 this.resetBtn.disabled = false;
@@ -323,9 +403,9 @@ class ImageDrawApp {
         this.counterDisplay.textContent = `${activeCount}/${totalCount}`;
 
         this.counterDisplay.classList.remove('limit-warning', 'limit-exceeded');
-        if (totalCount > PickPop.FREE_TIER_LIMIT) {
+        if (activeCount > PickPop.FREE_TIER_LIMIT) {
             this.counterDisplay.classList.add('limit-exceeded');
-        } else if (totalCount >= PickPop.FREE_TIER_LIMIT * 0.8) {
+        } else if (activeCount >= PickPop.FREE_TIER_LIMIT * 0.8) {
             this.counterDisplay.classList.add('limit-warning');
         }
     }
@@ -350,9 +430,22 @@ class ImageDrawApp {
             return;
         }
 
-        if (PickPop.isOverFreeLimit(this.images.length)) {
+        // One-time reminder before the FIRST draw of this session —
+        // give users a last chance to verify the list is complete.
+        if (!this.completenessConfirmed) {
+            const confirmed = await PickPop.showConfirm(
+                `คุณมีรูปภาพทั้งหมด ${this.images.length} รูป\n\n` +
+                `ตรวจสอบแล้วใช่ไหมว่ารูปภาพครบถ้วน ไม่มีใครตกหล่น?\n` +
+                `(เมื่อเริ่มสุ่มไปแล้ว การเพิ่มคนภายหลังอาจทำให้เกิดความสับสน)`,
+                '✅ ตรวจสอบความครบถ้วน'
+            );
+            if (!confirmed) return;
+            this.completenessConfirmed = true;
+        }
+
+        if (PickPop.isOverFreeLimit(eligibleImages.length)) {
             const shouldContinue = await PickPop.showConfirm(
-                `รุ่นฟรีจำกัดสุ่มได้ ${PickPop.FREE_TIER_LIMIT} คน\nคุณมี ${this.images.length} คน\n\nต้องการอัปเกรดไหม?`,
+                `รุ่นฟรีจำกัดสุ่มได้ ${PickPop.FREE_TIER_LIMIT} คน\nคุณมีรูปที่พร้อมสุ่ม ${eligibleImages.length} คน\n\nต้องการอัปเกรดไหม?`,
                 'เกินขีดจำกัดฟรี'
             );
             if (shouldContinue) window.location.href = 'index.html';
@@ -661,6 +754,7 @@ class ImageDrawApp {
                 }
 
                 this.images = [];
+                this.completenessConfirmed = false;
                 this.gridContainer.innerHTML = '';
                 this.gridContainer.appendChild(this.highlightBox);
                 this.winnerGallery.innerHTML = '';

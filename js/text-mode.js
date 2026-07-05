@@ -94,6 +94,7 @@ class TextDrawApp {
 
         this.names = uniqueNames;
         this.drawnIndices.clear();
+        this.completenessConfirmed = false;
 
         this.updateUI();
 
@@ -233,6 +234,19 @@ class TextDrawApp {
         if (this.names.length === 0) {
             PickPop.showToast('กรุณาใส่รายชื่อก่อน!', 'error');
             return;
+        }
+
+        // One-time reminder before the FIRST draw of this session —
+        // give users a last chance to verify the list is complete.
+        if (!this.completenessConfirmed) {
+            const confirmed = await PickPop.showConfirm(
+                `คุณมีรายชื่อทั้งหมด ${this.names.length} ชื่อ\n\n` +
+                `ตรวจสอบแล้วใช่ไหมว่ารายชื่อครบถ้วน ไม่มีใครตกหล่น?\n` +
+                `(เมื่อเริ่มสุ่มไปแล้ว การเพิ่มคนภายหลังอาจทำให้เกิดความสับสน)`,
+                '✅ ตรวจสอบความครบถ้วน'
+            );
+            if (!confirmed) return;
+            this.completenessConfirmed = true;
         }
 
         // Check free tier
@@ -473,6 +487,7 @@ class TextDrawApp {
 
                 this.names = state.names;
                 this.drawnIndices = new Set(state.drawnIndices || []);
+                this.completenessConfirmed = false;
 
                 this.updateUI();
 

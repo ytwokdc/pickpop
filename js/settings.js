@@ -96,6 +96,13 @@ class SettingsPanel {
                     </h3>
 
                     ${isImageMode ? `
+                    <div class="settings-note">
+                        💡 <strong>ไม่ต้องกังวลเรื่องขนาดไฟล์</strong> — ระบบจะปรับขนาดรูปให้อัตโนมัติ
+                        ไม่ว่าไฟล์ต้นฉบับจะใหญ่แค่ไหน (แนะนำรูปสัดส่วนสี่เหลี่ยมจัตุรัสหรือใกล้เคียงเพื่อผลลัพธ์ที่สวยที่สุด)<br><br>
+                        ⚠️ รองรับสูงสุด <strong>${PickPop.formatNumber(PickPop.IMAGE_HARD_LIMIT)} รูป</strong> ต่อกิจกรรม
+                        หากมีผู้เข้าร่วมมากกว่านี้ แนะนำให้ใช้ <a href="text-mode.html" style="color: var(--brand-accent);">โหมดสุ่มจากรายชื่อ</a> แทน
+                    </div>
+
                     <div class="setting-item">
                         <label class="setting-label">เลือกรูปภาพใหม่</label>
                         <label for="setting-file-input" class="setting-btn setting-btn-primary">
@@ -103,7 +110,7 @@ class SettingsPanel {
                         </label>
                         <input type="file" id="setting-file-input" class="setting-file-input" 
                                accept="image/jpeg,image/png,image/webp" multiple>
-                        <p class="setting-hint">รองรับ JPG, PNG, WebP</p>
+                        <p class="setting-hint">รองรับ JPG, PNG, WebP — ขนาดไฟล์เท่าไหร่ก็ได้</p>
                     </div>
 
                     <div class="setting-item">
@@ -153,6 +160,11 @@ class SettingsPanel {
                 <!-- Draw Settings -->
                 <div class="settings-section">
                     <h3 class="settings-section-title">🎲 การสุ่ม</h3>
+
+                    <div class="settings-note">
+                        ✅ <strong>ก่อนเริ่มสุ่ม</strong> ควรตรวจสอบรายการ${isImageMode ? 'รูปภาพ' : 'รายชื่อ'}ด้านบนให้ครบถ้วน
+                        เพื่อไม่ให้มีใครตกหล่น เมื่อเริ่มสุ่มไปแล้วการเพิ่มคนเข้าไปภายหลังอาจทำให้เกิดความสับสนได้
+                    </div>
 
                     <div class="setting-item">
                         <label class="setting-label">จำนวนรางวัลต่อครั้ง</label>

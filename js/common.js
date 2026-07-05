@@ -7,6 +7,14 @@ const APP_NAME = 'PickPop';
 const APP_VERSION = '1.0.0';
 const FREE_TIER_LIMIT = 30;
 
+// Image mode technical limits (separate from free tier)
+const IMAGE_SOFT_WARNING_LIMIT = 300;  // Show gentle warning
+const IMAGE_HARD_LIMIT = 500;          // Block further additions
+
+// Image compression settings
+const IMAGE_MAX_DIMENSION = 400;       // Max width/height in px
+const IMAGE_JPEG_QUALITY = 0.8;        // 0-1
+
 // Storage Keys
 const STORAGE_KEYS = {
     IMAGE_MODE: 'pickpop_image_mode',
@@ -267,11 +275,61 @@ function debounce(func, wait) {
     };
 }
 
+/**
+ * Compress an image file using Canvas - resizes to max dimension and
+ * re-encodes as JPEG. Keeps memory usage manageable when users upload
+ * many high-resolution photos (e.g. straight from a phone camera).
+ * @param {File} file - Original image file
+ * @param {number} maxDimension - Max width/height in px
+ * @param {number} quality - JPEG quality 0-1
+ * @returns {Promise<string>} - Compressed image as Data URL
+ */
+function compressImage(file, maxDimension = IMAGE_MAX_DIMENSION, quality = IMAGE_JPEG_QUALITY) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                let { width, height } = img;
+
+                if (width > height && width > maxDimension) {
+                    height = Math.round((height * maxDimension) / width);
+                    width = maxDimension;
+                } else if (height > maxDimension) {
+                    width = Math.round((width * maxDimension) / height);
+                    height = maxDimension;
+                }
+
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+
+                try {
+                    const dataUrl = canvas.toDataURL('image/jpeg', quality);
+                    resolve(dataUrl);
+                } catch (err) {
+                    reject(err);
+                }
+            };
+            img.onerror = reject;
+            img.src = e.target.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
 // Export for use in other scripts (browser global)
 window.PickPop = {
     APP_NAME,
     APP_VERSION,
     FREE_TIER_LIMIT,
+    IMAGE_SOFT_WARNING_LIMIT,
+    IMAGE_HARD_LIMIT,
+    IMAGE_MAX_DIMENSION,
+    IMAGE_JPEG_QUALITY,
     STORAGE_KEYS,
     showToast,
     showConfirm,
@@ -280,5 +338,6 @@ window.PickPop = {
     isOverFreeLimit,
     getFreeLimitInfo,
     formatNumber,
-    debounce
+    debounce,
+    compressImage
 };
