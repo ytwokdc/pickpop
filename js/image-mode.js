@@ -27,12 +27,6 @@ class ImageDrawApp {
         this.resetBtn = document.getElementById('resetBtn');
         this.shuffleBtn = document.getElementById('shuffleBtn');
         this.drawBtn = document.getElementById('drawBtn');
-        this.exportBtn = document.getElementById('exportBtn');
-
-        this.durationInput = document.getElementById('durationInput');
-        this.durationBtn = document.getElementById('durationBtn');
-        this.prizesInput = document.getElementById('prizesInput');
-        this.prizesBtn = document.getElementById('prizesBtn');
 
         this.winnerModal = document.getElementById('winnerModal');
         this.winnerContent = document.getElementById('winnerContent');
@@ -42,7 +36,7 @@ class ImageDrawApp {
     }
 
     init() {
-        // File inputs
+        // Hidden file inputs (backward compat)
         this.fileInput.addEventListener('change', (e) => this.handleFileSelect(e));
         this.addMoreInput.addEventListener('change', (e) => this.handleAddMoreFiles(e));
         this.importInput.addEventListener('change', (e) => this.importState(e));
@@ -51,18 +45,6 @@ class ImageDrawApp {
         this.resetBtn.addEventListener('click', () => this.reset());
         this.shuffleBtn.addEventListener('click', () => this.toggleAutoShuffle());
         this.drawBtn.addEventListener('click', () => this.startDraw());
-        this.exportBtn.addEventListener('click', () => this.exportState());
-
-        // Settings
-        this.durationBtn.addEventListener('click', () => this.updateDuration());
-        this.prizesBtn.addEventListener('click', () => this.updatePrizes());
-
-        this.prizesInput.addEventListener('input', () => {
-            const count = parseInt(this.prizesInput.value);
-            if (count >= 1 && count <= 20) {
-                this.prizeCount = count;
-            }
-        });
 
         // Modal
         this.closeModal.addEventListener('click', () => this.hideWinnerModal());
@@ -79,6 +61,12 @@ class ImageDrawApp {
             }
             if (e.code === 'Escape') this.hideWinnerModal();
         });
+
+        // Initialize settings panel and sync settings
+        window.settingsPanel = new SettingsPanel(this, { mode: 'image' });
+        // Sync settings from panel
+        this.duration = window.settingsPanel.settings.duration || 3000;
+        this.prizeCount = window.settingsPanel.settings.prizeCount || 1;
     }
 
     // ============================================
@@ -89,7 +77,6 @@ class ImageDrawApp {
         const files = Array.from(event.target.files);
         if (files.length === 0) return;
 
-        // Check free tier limit
         if (PickPop.isOverFreeLimit(files.length)) {
             PickPop.showToast(
                 `รุ่นฟรีจำกัด ${PickPop.FREE_TIER_LIMIT} คน คุณเลือก ${files.length} คน`,
@@ -99,7 +86,6 @@ class ImageDrawApp {
             this.showFreeTierWarning();
         }
 
-        // Clear existing images
         this.images = [];
         this.gridContainer.innerHTML = '';
         this.gridContainer.appendChild(this.highlightBox);
@@ -118,6 +104,9 @@ class ImageDrawApp {
                     this.resetBtn.disabled = false;
                     this.shuffleBtn.disabled = false;
                     this.updateCounter();
+
+                    // Close settings panel if open
+                    if (window.settingsPanel) window.settingsPanel.closePanel();
                 }
             };
             reader.readAsDataURL(file);
@@ -166,7 +155,6 @@ class ImageDrawApp {
                 }
             }
 
-            // Check free tier limit after adding
             const newTotal = this.images.length + filesToAdd.length;
             if (PickPop.isOverFreeLimit(newTotal)) {
                 PickPop.showToast(
@@ -177,7 +165,6 @@ class ImageDrawApp {
                 this.showFreeTierWarning();
             }
 
-            // Add new images
             filesToAdd.forEach((item) => {
                 const nextId = this.images.length > 0
                     ? Math.max(...this.images.map(i => i.id)) + 1
@@ -209,6 +196,9 @@ class ImageDrawApp {
                     'success',
                     2500
                 );
+
+                // Close settings panel
+                if (window.settingsPanel) window.settingsPanel.closePanel();
             } else if (duplicates.length > 0) {
                 PickPop.showToast(
                     `พบรูปซ้ำทั้งหมด ${duplicates.length} รูป — ไม่ได้เพิ่ม`,
@@ -223,8 +213,7 @@ class ImageDrawApp {
 
     addImage(src, id, fileName = null) {
         this.images.push({
-            src,
-            id,
+            src, id,
             fileName: fileName || `image_${id}`,
             disabled: false,
             element: null
@@ -250,7 +239,7 @@ class ImageDrawApp {
     }
 
     // ============================================
-    // GRID LAYOUT (LOCKED HEIGHT)
+    // GRID LAYOUT
     // ============================================
 
     updateGrid() {
@@ -267,8 +256,6 @@ class ImageDrawApp {
         const containerWidth = this.gridContainer.offsetWidth;
         const containerHeight = this.gridContainer.offsetHeight;
         const gap = 10;
-
-        // LOCK maximum height with safety margin
         const MAX_GRID_HEIGHT = containerHeight - 30;
 
         let bestCols = 1;
@@ -277,13 +264,10 @@ class ImageDrawApp {
 
         for (let cols = 1; cols <= count; cols++) {
             const rows = Math.ceil(count / cols);
-
             const availableWidth = containerWidth - (cols - 1) * gap;
             const maxWidthPerImage = Math.floor(availableWidth / cols);
-
             const availableHeight = MAX_GRID_HEIGHT - (rows - 1) * gap;
             const maxHeightPerImage = Math.floor(availableHeight / rows);
-
             const imageSize = Math.min(maxWidthPerImage, maxHeightPerImage);
 
             if (imageSize <= 0) continue;
@@ -366,15 +350,12 @@ class ImageDrawApp {
             return;
         }
 
-        // Check free tier limit
         if (PickPop.isOverFreeLimit(this.images.length)) {
             const shouldContinue = await PickPop.showConfirm(
                 `รุ่นฟรีจำกัดสุ่มได้ ${PickPop.FREE_TIER_LIMIT} คน\nคุณมี ${this.images.length} คน\n\nต้องการอัปเกรดไหม?`,
                 'เกินขีดจำกัดฟรี'
             );
-            if (shouldContinue) {
-                window.location.href = 'index.html';
-            }
+            if (shouldContinue) window.location.href = 'index.html';
             return;
         }
 
@@ -390,7 +371,9 @@ class ImageDrawApp {
         this.resetBtn.disabled = true;
         this.shuffleBtn.disabled = true;
 
-        // Animation - highlight box moves randomly
+        // Play music
+        if (window.settingsPanel) window.settingsPanel.playMusic();
+
         this.highlightBox.style.display = 'block';
         const startTime = Date.now();
         const duration = this.duration;
@@ -424,24 +407,22 @@ class ImageDrawApp {
     }
 
     finishDraw(eligibleImages, drawCount) {
-        // Randomly select winners
         const shuffled = [...eligibleImages].sort(() => Math.random() - 0.5);
         const winners = shuffled.slice(0, drawCount);
 
-        // Mark as disabled
         winners.forEach(winner => {
             winner.disabled = true;
             winner.element.classList.add('winner');
         });
 
-        // Hide highlight
         this.highlightBox.style.display = 'none';
 
-        // Show winners in gallery
         const winnerSources = winners.map(w => w.src);
         winners.forEach(w => this.addToWinnerGallery(w));
 
-        // Update grid and counter
+        // Stop music
+        if (window.settingsPanel) window.settingsPanel.stopMusic();
+
         setTimeout(() => {
             winners.forEach(w => {
                 w.element.classList.remove('winner');
@@ -494,7 +475,6 @@ class ImageDrawApp {
                 'ยืนยันการย้ายกลับ'
             );
             if (!confirm) return;
-
             img.disabled = false;
             img.element.classList.remove('disabled', 'winner');
             this.removeFromWinnerGallery(img);
@@ -504,7 +484,6 @@ class ImageDrawApp {
                 'ยืนยันการย้ายออก'
             );
             if (!confirm) return;
-
             img.disabled = true;
             img.element.classList.add('disabled');
             this.addToWinnerGallery(img);
@@ -534,16 +513,12 @@ class ImageDrawApp {
     // ============================================
 
     toggleAutoShuffle() {
-        if (this.isAutoShuffling) {
-            this.stopAutoShuffle();
-        } else {
-            this.startAutoShuffle();
-        }
+        if (this.isAutoShuffling) this.stopAutoShuffle();
+        else this.startAutoShuffle();
     }
 
     startAutoShuffle() {
         if (this.images.filter(i => !i.disabled).length < 2) return;
-
         this.isAutoShuffling = true;
         this.shuffleBtn.classList.add('active');
         this.shuffleBtn.innerHTML = '⏸ Stop';
@@ -593,8 +568,6 @@ class ImageDrawApp {
         else if (count >= 10) cols = 4;
 
         this.winnerContent.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
-
-        // Calculate size based on modal space
         const maxSize = count <= 4 ? 200 : count <= 9 ? 150 : 120;
 
         imageSources.forEach((src, index) => {
@@ -616,32 +589,6 @@ class ImageDrawApp {
 
     hideWinnerModal() {
         this.winnerModal.classList.remove('show');
-    }
-
-    // ============================================
-    // SETTINGS UPDATE
-    // ============================================
-
-    updateDuration() {
-        const seconds = parseFloat(this.durationInput.value);
-        if (seconds >= 1 && seconds <= 10) {
-            this.duration = seconds * 1000;
-            this.durationBtn.textContent = '✓';
-            setTimeout(() => {
-                this.durationBtn.textContent = 'OK';
-            }, 500);
-        }
-    }
-
-    updatePrizes() {
-        const count = parseInt(this.prizesInput.value);
-        if (count >= 1 && count <= 20) {
-            this.prizeCount = count;
-            this.prizesBtn.textContent = '✓';
-            setTimeout(() => {
-                this.prizesBtn.textContent = 'OK';
-            }, 500);
-        }
     }
 
     // ============================================
@@ -680,6 +627,8 @@ class ImageDrawApp {
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
+
+        PickPop.showToast('Export สำเร็จ', 'success', 2000);
     }
 
     async importState(event) {
@@ -706,21 +655,16 @@ class ImageDrawApp {
                     throw new Error('ไฟล์ไม่ถูกต้อง');
                 }
 
-                // Restore settings
                 if (state.settings) {
                     this.duration = state.settings.duration || 3000;
                     this.prizeCount = state.settings.prizeCount || 1;
-                    this.durationInput.value = this.duration / 1000;
-                    this.prizesInput.value = this.prizeCount;
                 }
 
-                // Clear current state
                 this.images = [];
                 this.gridContainer.innerHTML = '';
                 this.gridContainer.appendChild(this.highlightBox);
                 this.winnerGallery.innerHTML = '';
 
-                // Restore images
                 state.images.forEach(imgData => {
                     this.addImage(imgData.src, imgData.id, imgData.fileName);
                     const img = this.images[this.images.length - 1];
@@ -752,6 +696,8 @@ class ImageDrawApp {
 
                 PickPop.showToast(`Import สำเร็จ ${state.images.length} รูป`, 'success');
 
+                if (window.settingsPanel) window.settingsPanel.closePanel();
+
             } catch (error) {
                 console.error('Import failed:', error);
                 PickPop.showToast('Import ล้มเหลว: ' + error.message, 'error');
@@ -763,7 +709,7 @@ class ImageDrawApp {
     }
 }
 
-// Initialize app when DOM is ready
+// Initialize app
 document.addEventListener('DOMContentLoaded', () => {
     window.imageApp = new ImageDrawApp();
 });
