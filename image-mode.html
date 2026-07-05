@@ -12,11 +12,12 @@
     
     <!-- Styles -->
     <link rel="stylesheet" href="css/common.css">
+    <link rel="stylesheet" href="css/settings.css">
     <link rel="stylesheet" href="css/image-mode.css">
 </head>
 <body>
     <div class="image-mode-page">
-        <!-- Top Bar -->
+        <!-- Top Bar - เหลือแค่สิ่งจำเป็น -->
         <div class="top-bar">
             <div class="top-bar-left">
                 <a href="index.html" class="back-btn">
@@ -24,39 +25,17 @@
                     <span>หน้าแรก</span>
                 </a>
                 <div class="counter-display" id="counterDisplay">0/0</div>
-                
-                <label for="fileInput" class="file-input-label">
-                    📁 เลือกรูปภาพ
-                </label>
-                <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp" multiple>
-                
-                <label for="addMoreInput" class="file-input-label add-more-label">
-                    + เพิ่มรูป
-                </label>
-                <input type="file" id="addMoreInput" accept="image/jpeg,image/png,image/webp" multiple>
             </div>
 
             <div class="top-bar-right">
-                <div class="control-group">
-                    <label>จำนวนรางวัล:</label>
-                    <input type="number" id="prizesInput" class="control-input" value="1" min="1" max="20">
-                    <button class="control-btn" id="prizesBtn">OK</button>
-                </div>
-                
-                <div class="control-group">
-                    <label>เวลา:</label>
-                    <input type="number" id="durationInput" class="control-input" value="3" min="1" max="10" step="0.5">
-                    <button class="control-btn" id="durationBtn">OK</button>
-                    <span style="font-size: 0.85em;">วินาที</span>
-                </div>
-
-                <button class="state-btn" id="exportBtn">💾 Export</button>
-                <label for="importInput" class="state-btn import-btn">
-                    📂 Import
-                </label>
-                <input type="file" id="importInput" accept=".json">
+                <!-- Settings button will be inserted by settings.js -->
             </div>
         </div>
+
+        <!-- Hidden inputs for backward compatibility -->
+        <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp" multiple style="display:none;">
+        <input type="file" id="addMoreInput" accept="image/jpeg,image/png,image/webp" multiple style="display:none;">
+        <input type="file" id="importInput" accept=".json" style="display:none;">
 
         <!-- Grid Container -->
         <div class="grid-container" id="gridContainer">
@@ -64,9 +43,12 @@
                 <div class="empty-state-icon">📸</div>
                 <h2 class="empty-state-title">ยังไม่มีรูปภาพ</h2>
                 <p class="empty-state-text">
-                    เริ่มต้นด้วยการคลิกปุ่ม "เลือกรูปภาพ" ด้านบน<br>
-                    รองรับไฟล์ JPG, PNG, WebP
+                    เริ่มต้นด้วยการเปิด <strong>ตั้งค่า ⚙️</strong> ที่มุมขวาบน<br>
+                    แล้วเลือก "เลือกรูปภาพ"
                 </p>
+                <button class="setting-btn setting-btn-accent" id="openSettingsFromEmpty" style="max-width: 200px; margin-top: 10px;">
+                    ⚙️ เปิดตั้งค่า
+                </button>
             </div>
             <div class="highlight-box" id="highlightBox"></div>
         </div>
@@ -110,6 +92,19 @@
     </div>
 
     <script src="js/common.js"></script>
+    <script src="js/settings.js"></script>
     <script src="js/image-mode.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const openBtn = document.getElementById('openSettingsFromEmpty');
+            if (openBtn) {
+                openBtn.addEventListener('click', () => {
+                    if (window.settingsPanel) {
+                        window.settingsPanel.openPanel();
+                    }
+                });
+            }
+        });
+    </script>
 </body>
 </html>
