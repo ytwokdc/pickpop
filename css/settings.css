@@ -527,3 +527,109 @@
 .settings-note strong {
     color: var(--brand-accent);
 }
+
+/* ========================================
+   Text Mode Specific - Names List
+   ======================================== */
+
+.setting-names-list {
+    max-height: 250px;
+    overflow-y: auto;
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: var(--radius-sm);
+    padding: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.setting-names-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.setting-names-list::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+}
+
+.name-list-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    margin-bottom: 4px;
+    font-size: 0.9em;
+    transition: background var(--transition-fast);
+}
+
+.name-list-item:last-child {
+    margin-bottom: 0;
+}
+
+.name-list-item:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.name-list-item.drawn {
+    opacity: 0.55;
+    background: rgba(76, 175, 80, 0.15);
+}
+
+.name-list-number {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.85em;
+    min-width: 30px;
+    font-weight: 500;
+}
+
+.name-list-text {
+    flex: 1;
+    color: var(--text-white);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.name-list-status {
+    font-size: 0.75em;
+    color: #4caf50;
+    padding: 2px 8px;
+    background: rgba(76, 175, 80, 0.2);
+    border-radius: 10px;
+    font-weight: 500;
+}
+
+.name-list-remove {
+    background: rgba(244, 67, 54, 0.3);
+    border: none;
+    color: white;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    font-size: 0.8em;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.name-list-remove:hover {
+    background: rgba(244, 67, 54, 0.6);
+    transform: scale(1.1);
+}
+
+.empty-names-msg {
+    text-align: center;
+    padding: 20px;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.9em;
+}
+
+/* Textarea styling */
+textarea.setting-input {
+    resize: vertical;
+    font-family: inherit;
+    line-height: 1.5;
+}
