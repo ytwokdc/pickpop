@@ -3,7 +3,6 @@
    (Shared between image-mode & text-mode)
    ======================================== */
 
-// Thai Google Fonts list
 const THAI_FONTS = [
     { name: 'Prompt', value: 'Prompt', style: 'Modern' },
     { name: 'Kanit', value: 'Kanit', style: 'Modern' },
@@ -19,7 +18,6 @@ const THAI_FONTS = [
     { name: 'Taviraj', value: 'Taviraj', style: 'Serif' }
 ];
 
-// Font sizes
 const FONT_SIZES = [
     { name: 'เล็ก', value: '14px' },
     { name: 'ปกติ', value: '16px' },
@@ -31,7 +29,7 @@ const FONT_SIZES = [
 class SettingsPanel {
     constructor(app, options = {}) {
         this.app = app;
-        this.mode = options.mode || 'image'; // 'image' or 'text'
+        this.mode = options.mode || 'image';
         this.settings = this.loadSettings();
         this.uploadedMusic = null;
         this.uploadedBackground = null;
@@ -42,22 +40,13 @@ class SettingsPanel {
         this.loadGoogleFonts();
     }
 
-    // ============================================
-    // GOOGLE FONTS LOADER
-    // ============================================
-
     loadGoogleFonts() {
-        // Load all Thai fonts
         const fontFamilies = THAI_FONTS.map(f => f.value.replace(/ /g, '+')).join('&family=');
         const link = document.createElement('link');
         link.href = `https://fonts.googleapis.com/css2?family=${fontFamilies}&display=swap`;
         link.rel = 'stylesheet';
         document.head.appendChild(link);
     }
-
-    // ============================================
-    // SETTINGS BUTTON (Top bar)
-    // ============================================
 
     createSettingsButton() {
         const btn = document.createElement('button');
@@ -68,7 +57,6 @@ class SettingsPanel {
         `;
         btn.addEventListener('click', () => this.openPanel());
 
-        // Insert into top-bar-right
         const topBarRight = document.querySelector('.top-bar-right');
         if (topBarRight) {
             topBarRight.appendChild(btn);
@@ -76,17 +64,11 @@ class SettingsPanel {
         this.settingsBtn = btn;
     }
 
-    // ============================================
-    // SETTINGS PANEL
-    // ============================================
-
     createSettingsPanel() {
-        // Overlay
         this.overlay = document.createElement('div');
         this.overlay.className = 'settings-overlay';
         this.overlay.addEventListener('click', () => this.closePanel());
 
-        // Panel
         this.panel = document.createElement('div');
         this.panel.className = 'settings-panel';
         this.panel.innerHTML = this.getPanelHTML();
@@ -110,7 +92,7 @@ class SettingsPanel {
                 <!-- File Management -->
                 <div class="settings-section">
                     <h3 class="settings-section-title">
-                        📁 จัดการ${isImageMode ? 'รูป' : 'รายชื่อ'}
+                        ${isImageMode ? '📁 จัดการรูป' : '📝 จัดการรายชื่อ'}
                     </h3>
 
                     ${isImageMode ? `
@@ -132,7 +114,40 @@ class SettingsPanel {
                         <input type="file" id="setting-add-input" class="setting-file-input" 
                                accept="image/jpeg,image/png,image/webp" multiple>
                     </div>
-                    ` : ''}
+                    ` : `
+                    <div class="settings-note">
+                        💡 <strong>วิธีนำเข้ารายชื่อ:</strong> พิมพ์หรือวางรายชื่อลงในกล่องด้านล่าง <strong>บรรทัดละ 1 ชื่อ</strong> 
+                        หรือ Import จากไฟล์ .txt ก็ได้
+                    </div>
+
+                    <div class="setting-item">
+                        <label class="setting-label">พิมพ์/วางรายชื่อ (บรรทัดละ 1 ชื่อ)</label>
+                        <textarea id="setting-names-input" class="setting-input" rows="8" 
+                                  placeholder="ตัวอย่าง:&#10;สมชาย ใจดี&#10;สมหญิง จริงใจ&#10;สมศักดิ์ รักงาน"
+                                  style="resize: vertical; min-height: 120px; font-family: inherit;"></textarea>
+                        <button class="setting-btn setting-btn-primary" id="setting-names-apply" style="margin-top: 8px;">
+                            ✓ อัปเดตรายชื่อ
+                        </button>
+                        <p class="setting-hint">
+                            การกดปุ่มจะแทนที่รายชื่อเดิมทั้งหมด
+                        </p>
+                    </div>
+
+                    <div class="setting-item">
+                        <label class="setting-label">หรือ Import จากไฟล์ .txt</label>
+                        <label for="setting-txt-input" class="setting-btn setting-btn-accent">
+                            📄 เลือกไฟล์ .txt
+                        </label>
+                        <input type="file" id="setting-txt-input" class="setting-file-input" accept=".txt">
+                        <p class="setting-hint">ระบบจะอ่านทีละบรรทัดเป็น 1 ชื่อ</p>
+                    </div>
+
+                    <div class="setting-item">
+                        <label class="setting-label">รายการทั้งหมด (<span id="setting-names-count">0</span> รายชื่อ)</label>
+                        <div id="setting-names-list" class="setting-names-list"></div>
+                        <p class="setting-hint">💡 คลิก ✕ เพื่อลบ หรือแก้ไขในกล่องด้านบน</p>
+                    </div>
+                    `}
                 </div>
 
                 <!-- Draw Settings -->
@@ -189,6 +204,18 @@ class SettingsPanel {
                         </select>
                     </div>
 
+                    ${!isImageMode ? `
+                    <div class="setting-item">
+                        <label class="setting-label">สีตัวอักษร (ตอนสุ่ม)</label>
+                        <div class="setting-color-group">
+                            <input type="color" id="setting-text-color" class="setting-color-picker" 
+                                   value="${this.settings.textColor || '#ffffff'}">
+                            <input type="text" id="setting-text-color-text" class="setting-color-text" 
+                                   value="${this.settings.textColor || '#FFFFFF'}" maxlength="7">
+                        </div>
+                    </div>
+                    ` : ''}
+
                     <div class="setting-item">
                         <label class="setting-label">สีพื้นหลัง</label>
                         <div class="setting-color-group">
@@ -228,7 +255,7 @@ class SettingsPanel {
                     </div>
 
                     <div class="setting-item">
-                        <label class="setting-label">อัปโหลดเพลงคลอ (MP3)</label>
+                        <label class="setting-label">อัปโหลดเพลงคลอ</label>
                         <label for="setting-music" class="setting-btn setting-btn-purple">
                             🎵 เลือกไฟล์เพลง
                         </label>
@@ -281,35 +308,23 @@ class SettingsPanel {
         `;
     }
 
-    // ============================================
-    // EVENTS
-    // ============================================
-
     attachPanelEvents() {
-        // Close button
         this.panel.querySelector('#settingsClose').addEventListener('click', () => this.closePanel());
 
-        // ESC to close
         document.addEventListener('keydown', (e) => {
             if (e.code === 'Escape' && this.panel.classList.contains('show')) {
                 this.closePanel();
             }
         });
 
-        // File selects (image mode)
+        // ============ IMAGE MODE ============
         if (this.mode === 'image') {
             const fileInput = this.panel.querySelector('#setting-file-input');
             const addInput = this.panel.querySelector('#setting-add-input');
 
             if (fileInput) {
                 fileInput.addEventListener('change', (e) => {
-                    if (this.app.fileInput) {
-                        // Trigger original file handler
-                        Object.defineProperty(this.app.fileInput, 'files', {
-                            value: e.target.files,
-                            writable: false,
-                            configurable: true
-                        });
+                    if (this.app.handleFileSelect) {
                         this.app.handleFileSelect({ target: { files: e.target.files, value: '' } });
                         e.target.value = '';
                     }
@@ -326,7 +341,71 @@ class SettingsPanel {
             }
         }
 
-        // Prize count
+        // ============ TEXT MODE ============
+        if (this.mode === 'text') {
+            const namesInput = this.panel.querySelector('#setting-names-input');
+            const applyBtn = this.panel.querySelector('#setting-names-apply');
+            const txtInput = this.panel.querySelector('#setting-txt-input');
+
+            // Load current names into textarea
+            if (namesInput && this.app.names) {
+                namesInput.value = this.app.names.join('\n');
+            }
+
+            // Apply names button
+            if (applyBtn) {
+                applyBtn.addEventListener('click', () => {
+                    const text = namesInput.value;
+                    if (this.app.setNamesFromText) {
+                        this.app.setNamesFromText(text);
+                        this.refreshNamesList();
+                    }
+                });
+            }
+
+            // Import .txt file
+            if (txtInput) {
+                txtInput.addEventListener('change', (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        const text = event.target.result;
+                        namesInput.value = text;
+                        if (this.app.setNamesFromText) {
+                            this.app.setNamesFromText(text);
+                            this.refreshNamesList();
+                        }
+                    };
+                    reader.readAsText(file, 'UTF-8');
+                    e.target.value = '';
+                });
+            }
+
+            this.refreshNamesList();
+
+            // Text color
+            const textColorInput = this.panel.querySelector('#setting-text-color');
+            const textColorText = this.panel.querySelector('#setting-text-color-text');
+            if (textColorInput) {
+                textColorInput.addEventListener('input', (e) => {
+                    const color = e.target.value;
+                    textColorText.value = color.toUpperCase();
+                    this.settings.textColor = color;
+                    this.saveSettings();
+                });
+                textColorText.addEventListener('input', (e) => {
+                    const color = e.target.value;
+                    if (/^#[0-9A-F]{6}$/i.test(color)) {
+                        textColorInput.value = color;
+                        this.settings.textColor = color;
+                        this.saveSettings();
+                    }
+                });
+            }
+        }
+
+        // ============ COMMON ============
         const prizesInput = this.panel.querySelector('#setting-prizes');
         prizesInput.addEventListener('input', (e) => {
             const val = parseInt(e.target.value);
@@ -337,7 +416,6 @@ class SettingsPanel {
             }
         });
 
-        // Duration
         const durationInput = this.panel.querySelector('#setting-duration');
         const durationValue = this.panel.querySelector('#setting-duration-value');
         durationInput.addEventListener('input', (e) => {
@@ -348,7 +426,6 @@ class SettingsPanel {
             this.saveSettings();
         });
 
-        // Font
         const fontSelect = this.panel.querySelector('#setting-font');
         const fontPreview = this.panel.querySelector('#font-preview');
         fontSelect.addEventListener('change', (e) => {
@@ -358,7 +435,6 @@ class SettingsPanel {
             this.saveSettings();
         });
 
-        // Font size
         const fontSizeSelect = this.panel.querySelector('#setting-font-size');
         fontSizeSelect.addEventListener('change', (e) => {
             this.settings.fontSize = e.target.value;
@@ -366,19 +442,16 @@ class SettingsPanel {
             this.saveSettings();
         });
 
-        // Background color
         const bgColorInput = this.panel.querySelector('#setting-bg-color');
         const bgColorText = this.panel.querySelector('#setting-bg-color-text');
-
         bgColorInput.addEventListener('input', (e) => {
             const color = e.target.value;
             bgColorText.value = color.toUpperCase();
             this.settings.bgColor = color;
-            this.settings.bgImage = null; // Clear image if color is chosen
+            this.settings.bgImage = null;
             this.applyBackground();
             this.saveSettings();
         });
-
         bgColorText.addEventListener('input', (e) => {
             const color = e.target.value;
             if (/^#[0-9A-F]{6}$/i.test(color)) {
@@ -390,12 +463,10 @@ class SettingsPanel {
             }
         });
 
-        // Background image
         const bgImageInput = this.panel.querySelector('#setting-bg-image');
         bgImageInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (!file) return;
-
             const reader = new FileReader();
             reader.onload = (event) => {
                 this.settings.bgImage = event.target.result;
@@ -408,19 +479,16 @@ class SettingsPanel {
             e.target.value = '';
         });
 
-        // Audio toggle
         const audioToggle = this.panel.querySelector('#setting-audio-enabled');
         audioToggle.addEventListener('change', (e) => {
             this.settings.audioEnabled = e.target.checked;
             this.saveSettings();
         });
 
-        // Music upload
         const musicInput = this.panel.querySelector('#setting-music');
         musicInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (!file) return;
-
             const reader = new FileReader();
             reader.onload = (event) => {
                 this.settings.musicData = event.target.result;
@@ -433,7 +501,6 @@ class SettingsPanel {
             e.target.value = '';
         });
 
-        // Volume
         const volumeInput = this.panel.querySelector('#setting-volume');
         const volumeValue = this.panel.querySelector('#setting-volume-value');
         volumeInput.addEventListener('input', (e) => {
@@ -443,29 +510,76 @@ class SettingsPanel {
             this.saveSettings();
         });
 
-        // Export
         const exportBtn = this.panel.querySelector('#setting-export');
         exportBtn.addEventListener('click', () => {
             if (this.app.exportState) this.app.exportState();
         });
 
-        // Import
         const importInput = this.panel.querySelector('#setting-import');
         importInput.addEventListener('change', (e) => {
-            if (this.app.importState) {
-                this.app.importState(e);
-            }
+            if (this.app.importState) this.app.importState(e);
         });
     }
 
-    // ============================================
-    // OPEN/CLOSE
-    // ============================================
+    // Refresh names list display (text mode)
+    refreshNamesList() {
+        if (this.mode !== 'text') return;
+
+        const listEl = this.panel.querySelector('#setting-names-list');
+        const countEl = this.panel.querySelector('#setting-names-count');
+        if (!listEl || !this.app.names) return;
+
+        countEl.textContent = this.app.names.length;
+
+        if (this.app.names.length === 0) {
+            listEl.innerHTML = '<div class="empty-names-msg">ยังไม่มีรายชื่อ</div>';
+            return;
+        }
+
+        listEl.innerHTML = this.app.names.map((name, index) => `
+            <div class="name-list-item ${this.app.drawnIndices && this.app.drawnIndices.has(index) ? 'drawn' : ''}">
+                <span class="name-list-number">${index + 1}.</span>
+                <span class="name-list-text">${this.escapeHtml(name)}</span>
+                ${this.app.drawnIndices && this.app.drawnIndices.has(index) 
+                    ? '<span class="name-list-status">✓ สุ่มแล้ว</span>' 
+                    : `<button class="name-list-remove" data-index="${index}">✕</button>`}
+            </div>
+        `).join('');
+
+        // Attach delete handlers
+        listEl.querySelectorAll('.name-list-remove').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const idx = parseInt(e.target.dataset.index);
+                if (this.app.removeName) {
+                    this.app.removeName(idx);
+                    // Update textarea too
+                    const namesInput = this.panel.querySelector('#setting-names-input');
+                    if (namesInput) namesInput.value = this.app.names.join('\n');
+                    this.refreshNamesList();
+                }
+            });
+        });
+    }
+
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
 
     openPanel() {
         this.overlay.classList.add('show');
         this.panel.classList.add('show');
         document.body.style.overflow = 'hidden';
+
+        // Refresh names list every time panel opens
+        if (this.mode === 'text') {
+            const namesInput = this.panel.querySelector('#setting-names-input');
+            if (namesInput && this.app.names) {
+                namesInput.value = this.app.names.join('\n');
+            }
+            this.refreshNamesList();
+        }
     }
 
     closePanel() {
@@ -473,10 +587,6 @@ class SettingsPanel {
         this.panel.classList.remove('show');
         document.body.style.overflow = '';
     }
-
-    // ============================================
-    // APPLY SETTINGS
-    // ============================================
 
     applySettings() {
         this.applyFont();
@@ -546,16 +656,13 @@ class SettingsPanel {
         this.saveSettings();
     }
 
-    // ============================================
-    // STORAGE
-    // ============================================
-
     loadSettings() {
         const key = this.mode === 'image' ? 'pickpop_image_settings' : 'pickpop_text_settings';
         const saved = PickPop.loadFromStorage(key, {});
         return {
             font: saved.font || 'Prompt',
             fontSize: saved.fontSize || '16px',
+            textColor: saved.textColor || '#FFFFFF',
             bgColor: saved.bgColor || null,
             bgImage: saved.bgImage || null,
             audioEnabled: saved.audioEnabled !== undefined ? saved.audioEnabled : true,
@@ -568,16 +675,11 @@ class SettingsPanel {
 
     saveSettings() {
         const key = this.mode === 'image' ? 'pickpop_image_settings' : 'pickpop_text_settings';
-        // Don't save bgImage/musicData to localStorage (too large)
         const toSave = { ...this.settings };
         delete toSave.bgImage;
         delete toSave.musicData;
         PickPop.saveToStorage(key, toSave);
     }
-
-    // ============================================
-    // MUSIC PLAYBACK
-    // ============================================
 
     playMusic() {
         if (!this.settings.audioEnabled || !this.settings.musicData) return;
@@ -589,9 +691,7 @@ class SettingsPanel {
 
         this.audioElement.src = this.settings.musicData;
         this.audioElement.volume = (this.settings.volume || 50) / 100;
-        this.audioElement.play().catch(err => {
-            console.log('Audio play failed:', err);
-        });
+        this.audioElement.play().catch(err => console.log('Audio play failed:', err));
     }
 
     stopMusic() {
@@ -602,5 +702,4 @@ class SettingsPanel {
     }
 }
 
-// Export
 window.SettingsPanel = SettingsPanel;
