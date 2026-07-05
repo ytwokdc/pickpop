@@ -12,6 +12,11 @@ class ImageDrawApp {
         this.autoShuffleInterval = null;
         this.isAutoShuffling = false;
 
+        // Built-in sound effects (spin sound + winner fanfare)
+        // Separate from user-uploaded background music in Settings
+        this.laserSound = new Audio('assets/sfx-laser.mp3');
+        this.prizeSound = new Audio('assets/sfx-prize.mp3');
+
         // DOM Elements
         this.gridContainer = document.getElementById('gridContainer');
         this.emptyState = document.getElementById('emptyState');
@@ -250,17 +255,7 @@ class ImageDrawApp {
                     : 0;
                 this.addImage(item.src, nextId, item.fileName);
                 const img = this.images[this.images.length - 1];
-
-                const div = document.createElement('div');
-                div.className = 'image-item';
-                div.dataset.id = img.id;
-
-                const imgEl = document.createElement('img');
-                imgEl.src = img.src;
-
-                div.appendChild(imgEl);
-                div.addEventListener('click', () => this.toggleImage(img.id));
-                img.element = div;
+                this.buildImageElement(img);
             });
 
             if (filesToAdd.length > 0) {
@@ -305,17 +300,61 @@ class ImageDrawApp {
         this.gridContainer.appendChild(this.highlightBox);
 
         this.images.forEach((img) => {
-            const div = document.createElement('div');
-            div.className = 'image-item';
-            div.dataset.id = img.id;
-
-            const imgEl = document.createElement('img');
-            imgEl.src = img.src;
-
-            div.appendChild(imgEl);
-            div.addEventListener('click', () => this.toggleImage(img.id));
-            img.element = div;
+            this.buildImageElement(img);
         });
+    }
+
+    // Build the DOM element for one image: the thumbnail plus a clear
+    // delete (✕) button — replaces the old "click the whole photo to
+    // exclude it" behavior, which users found ambiguous.
+    buildImageElement(img) {
+        const div = document.createElement('div');
+        div.className = 'image-item';
+        div.dataset.id = img.id;
+
+        const imgEl = document.createElement('img');
+        imgEl.src = img.src;
+        div.appendChild(imgEl);
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'image-delete-btn';
+        deleteBtn.innerHTML = '✕';
+        deleteBtn.title = 'ลบรูปนี้ออกจากรายการ';
+        deleteBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.deleteImage(img.id);
+        });
+        div.appendChild(deleteBtn);
+
+        img.element = div;
+        return div;
+    }
+
+    // Permanently remove an image from the pool (not just hide it).
+    // Users can always add it back via "+ เพิ่มรูป".
+    async deleteImage(id) {
+        const idx = this.images.findIndex(img => img.id === id);
+        if (idx === -1) return;
+
+        const confirmed = await PickPop.showConfirm(
+            'ต้องการลบรูปนี้ออกจากรายการทั้งหมดหรือไม่?\n\n(หากต้องการเพิ่มกลับ ให้กด "+ เพิ่มรูป" อัปโหลดใหม่อีกครั้ง)',
+            'ยืนยันการลบรูป'
+        );
+        if (!confirmed) return;
+
+        this.images.splice(idx, 1);
+        this.completenessConfirmed = false;
+
+        this.updateGrid();
+        this.updateCounter();
+
+        if (this.images.length === 0) {
+            this.drawBtn.disabled = true;
+            this.resetBtn.disabled = true;
+            this.shuffleBtn.disabled = true;
+        }
+
+        PickPop.showToast('ลบรูปเรียบร้อย', 'info', 1500);
     }
 
     // ============================================
@@ -403,8 +442,10 @@ class ImageDrawApp {
         this.counterDisplay.textContent = `${activeCount}/${totalCount}`;
 
         this.counterDisplay.classList.remove('limit-warning', 'limit-exceeded');
+        this.gridContainer.classList.remove('limit-exceeded');
         if (activeCount > PickPop.FREE_TIER_LIMIT) {
             this.counterDisplay.classList.add('limit-exceeded');
+            this.gridContainer.classList.add('limit-exceeded');
         } else if (activeCount >= PickPop.FREE_TIER_LIMIT * 0.8) {
             this.counterDisplay.classList.add('limit-warning');
         }
@@ -492,11 +533,21 @@ class ImageDrawApp {
                     this.highlightBox.style.height = rect.height + 'px';
                 }
             }
+            this.playLaserSound();
 
             setTimeout(animateHighlight, intervalTime);
         };
 
         animateHighlight();
+    }
+
+    // Play the built-in "spin" sound effect. Clones the audio node each
+    // time so overlapping plays don't cut each other off.
+    playLaserSound() {
+        if (!this.laserSound) return;
+        const sound = this.laserSound.cloneNode();
+        sound.volume = 0.5;
+        sound.play().catch(e => console.log('Laser sound play failed:', e));
     }
 
     finishDraw(eligibleImages, drawCount) {
@@ -513,7 +564,13 @@ class ImageDrawApp {
         const winnerSources = winners.map(w => w.src);
         winners.forEach(w => this.addToWinnerGallery(w));
 
-        // Stop music
+        // Play the built-in winner fanfare
+        if (this.prizeSound) {
+            this.prizeSound.currentTime = 0;
+            this.prizeSound.play().catch(e => console.log('Prize sound play failed:', e));
+        }
+
+        // Stop user-uploaded background music
         if (window.settingsPanel) window.settingsPanel.stopMusic();
 
         setTimeout(() => {
@@ -558,29 +615,22 @@ class ImageDrawApp {
     // TOGGLE / RESET
     // ============================================
 
+    // Only handles restoring an image from the winner gallery back into
+    // the active pool. Excluding an active image is now done via the
+    // explicit delete (✕) button on each thumbnail — see deleteImage().
     async toggleImage(id) {
         const img = this.images.find(i => i.id === id);
-        if (!img) return;
+        if (!img || !img.disabled) return;
 
-        if (img.disabled) {
-            const confirm = await PickPop.showConfirm(
-                'ต้องการนำรูปนี้กลับมาสุ่มอีกครั้งใช่ไหม?',
-                'ยืนยันการย้ายกลับ'
-            );
-            if (!confirm) return;
-            img.disabled = false;
-            img.element.classList.remove('disabled', 'winner');
-            this.removeFromWinnerGallery(img);
-        } else {
-            const confirm = await PickPop.showConfirm(
-                'ต้องการย้ายรูปนี้ออกจากการสุ่มใช่ไหม?',
-                'ยืนยันการย้ายออก'
-            );
-            if (!confirm) return;
-            img.disabled = true;
-            img.element.classList.add('disabled');
-            this.addToWinnerGallery(img);
-        }
+        const confirm = await PickPop.showConfirm(
+            'ต้องการนำรูปนี้กลับมาสุ่มอีกครั้งใช่ไหม?',
+            'ยืนยันการนำกลับมาสุ่ม'
+        );
+        if (!confirm) return;
+
+        img.disabled = false;
+        img.element.classList.remove('disabled', 'winner');
+        this.removeFromWinnerGallery(img);
 
         this.updateGrid();
         this.updateCounter();
@@ -764,17 +814,8 @@ class ImageDrawApp {
                     const img = this.images[this.images.length - 1];
                     img.disabled = imgData.disabled;
 
-                    const div = document.createElement('div');
-                    div.className = 'image-item';
-                    div.dataset.id = img.id;
-                    if (img.disabled) div.classList.add('disabled');
-
-                    const imgEl = document.createElement('img');
-                    imgEl.src = img.src;
-
-                    div.appendChild(imgEl);
-                    div.addEventListener('click', () => this.toggleImage(img.id));
-                    img.element = div;
+                    this.buildImageElement(img);
+                    if (img.disabled) img.element.classList.add('disabled');
 
                     if (img.disabled) this.addToWinnerGallery(img);
                 });

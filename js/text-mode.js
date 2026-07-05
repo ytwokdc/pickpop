@@ -11,6 +11,10 @@ class TextDrawApp {
         this.duration = 3000;
         this.prizeCount = 1;
 
+        // Built-in sound effects (spin sound + winner fanfare)
+        this.laserSound = new Audio('assets/sfx-laser.mp3');
+        this.prizeSound = new Audio('assets/sfx-prize.mp3');
+
         // DOM Elements
         this.drawArea = document.getElementById('drawArea');
         this.emptyState = document.getElementById('emptyState');
@@ -210,7 +214,7 @@ class TextDrawApp {
 
             const label = document.createElement('div');
             label.className = 'name-slot-label';
-            label.textContent = `รางวัลที่ ${i + 1}`;
+            label.textContent = `ผู้โชคดีคนที่ ${i + 1}`;
 
             const text = document.createElement('div');
             text.className = 'name-slot-text';
@@ -306,11 +310,21 @@ class TextDrawApp {
                 const randomIdx = availableIndices[Math.floor(Math.random() * availableIndices.length)];
                 slot.querySelector('.name-slot-text').textContent = this.names[randomIdx];
             });
+            this.playLaserSound();
 
             setTimeout(spin, spinInterval);
         };
 
         spin();
+    }
+
+    // Play the built-in "spin" sound effect. Clones the audio node each
+    // time so overlapping plays don't cut each other off.
+    playLaserSound() {
+        if (!this.laserSound) return;
+        const sound = this.laserSound.cloneNode();
+        sound.volume = 0.5;
+        sound.play().catch(e => console.log('Laser sound play failed:', e));
     }
 
     finishDraw(slots, winnerIndices) {
@@ -325,7 +339,13 @@ class TextDrawApp {
             this.drawnIndices.add(winnerIdx);
         });
 
-        // Stop music
+        // Play the built-in winner fanfare
+        if (this.prizeSound) {
+            this.prizeSound.currentTime = 0;
+            this.prizeSound.play().catch(e => console.log('Prize sound play failed:', e));
+        }
+
+        // Stop user-uploaded background music
         if (window.settingsPanel) window.settingsPanel.stopMusic();
 
         // Show modal after animation
@@ -357,7 +377,7 @@ class TextDrawApp {
             item.className = 'winner-name-item';
             item.style.animationDelay = `${index * 0.15}s`;
             item.innerHTML = `
-                <span class="winner-name-number">รางวัลที่ ${index + 1}</span>
+                <span class="winner-name-number">ผู้โชคดีคนที่ ${index + 1}</span>
                 <span>${this.escapeHtml(name)}</span>
             `;
             this.winnerContent.appendChild(item);
